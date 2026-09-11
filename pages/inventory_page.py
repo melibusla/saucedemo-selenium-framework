@@ -2,6 +2,8 @@ from selenium.webdriver.common.by import By
 
 
 class InventoryPage:
+    PAGE_TITLE = (By.CLASS_NAME, "title")
+    EXPECTED_TITLE_TEXT = "Products"
     SORT_DROPDOWN = (By.CLASS_NAME, "product_sort_container")
     INVENTORY_ITEM_NAME = (By.CLASS_NAME, "inventory_item_name")
     INVENTORY_ITEM_PRICE = (By.CLASS_NAME, "inventory_item_price")
@@ -14,6 +16,11 @@ class InventoryPage:
 
     def __init__(self, driver):
         self.driver = driver
+
+    def is_loaded(self):
+        """Confirms a successful login landed on the inventory page
+        (the "Products" title is visible). Covers L1."""
+        return self.driver.find_element(*self.PAGE_TITLE).text == self.EXPECTED_TITLE_TEXT
 
     def sort_by(self, option_text):
         """Selects a sort option (e.g. 'Name (A to Z)', 'Price (low to high)').

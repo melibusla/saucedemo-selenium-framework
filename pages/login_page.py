@@ -13,15 +13,11 @@ class LoginPage:
 
     def login(self, username, password):
         """Fills both fields and submits. Covers L1, L2, L6, L7 (matrix)."""
-        # TODO: find each element by its locator and interact with it
-        pass
-
-    def submit_empty(self):
-        """Clicks login without touching the fields. Covers L5."""
-        # TODO
-        pass
+        self.driver.find_element(*self.USERNAME_INPUT).send_keys(username)
+        self.driver.find_element(*self.PASSWORD_INPUT).send_keys(password)
+        self.driver.find_element(*self.LOGIN_BUTTON).click()
 
     def get_error_message(self):
         """Returns the error banner text. Covers L2, L3, L4, L5, L6."""
-        # TODO
-        pass
+        errormessage = self.driver.find_element(*self.ERROR_MESSAGE).text
+        return errormessage

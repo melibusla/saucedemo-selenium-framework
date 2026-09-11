@@ -1,2 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+
+# pytest-html reports
+reports/
+*.html
+
+# PyCharm
+.idea/
+
+# Virtual environments
 venv/
 .venv/
+
+# OS
+.DS_Store
