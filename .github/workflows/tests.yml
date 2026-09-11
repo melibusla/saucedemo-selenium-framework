@@ -4,7 +4,11 @@ on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     env:
       CI: "true"
 
@@ -23,11 +27,4 @@ jobs:
         uses: browser-actions/setup-chrome@v1
 
       - name: Run tests
-        run: pytest --browser_name chrome --html=reports/report.html
-
-      - name: Upload HTML report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pytest-report
-          path: reports/report.html
+        run: pytest --browser_name chrome
