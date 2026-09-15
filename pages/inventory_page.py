@@ -1,4 +1,8 @@
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support import expected_conditions as EC
 
 
 class InventoryPage:
@@ -10,48 +14,78 @@ class InventoryPage:
     CART_BADGE = (By.CLASS_NAME, "shopping_cart_badge")
     CART_LINK = (By.CLASS_NAME, "shopping_cart_link")
 
-    # Add-to-cart buttons use a data-test attribute per product, e.g.
-    # "add-to-cart-sauce-labs-backpack" — you'll need one locator per product
-    # you actually test, or a helper that builds the locator from the product name.
+    # SauceDemo uses a data-test attribute for each product button, like:
+    # "add-to-cart-sauce-labs-backpack".
+    # We can build the locator from the product slug instead of hard-coding
+    # each product in the page object.
 
     def __init__(self, driver):
         self.driver = driver
 
     def is_loaded(self):
-        """Confirms a successful login landed on the inventory page
-        (the "Products" title is visible). Covers L1."""
-        return self.driver.find_element(*self.PAGE_TITLE).text == self.EXPECTED_TITLE_TEXT
+        """Confirms the user is on the Inventory page.
+        We wait for the page title because the app can be slow on
+        performance_glitch_user. Covers L1, L7."""
+        try:
+            title_el = WebDriverWait(self.driver, 10).until(
+                EC.visibility_of_element_located(self.PAGE_TITLE)
+            )
+        except TimeoutException:
+            return False
+        return title_el.text == self.EXPECTED_TITLE_TEXT
 
     def sort_by(self, option_text):
-        """Selects a sort option (e.g. 'Name (A to Z)', 'Price (low to high)').
-        Covers I1-I4."""
-        # TODO
-        pass
+        """Chooses a sort option, such as 'Name (A to Z)'.
+        The Select helper keeps the code simple and readable."""
+        dropdown = WebDriverWait(self.driver, 5).until(
+            EC.visibility_of_element_located(self.SORT_DROPDOWN)
+        )
+        Select(dropdown).select_by_visible_text(option_text)
 
     def get_displayed_names(self):
-        """Returns the list of product names in the order they're displayed.
-        Use this to verify sort order, not just that a sort ran. Covers I1-I5."""
-        # TODO
-        pass
+        """Returns product names in the order shown on the page.
+        This is useful for checking sort results, not just whether the dropdown changed."""
+        products = WebDriverWait(self.driver, 5).until(
+            EC.visibility_of_all_elements_located(self.INVENTORY_ITEM_NAME)
+        )
+        return [product.text for product in products]
 
     def get_displayed_prices(self):
-        """Returns the list of product prices as floats, in displayed order.
-        Covers I3, I4."""
-        # TODO
-        pass
+        """Returns the displayed prices as floats.
+        Example: '$29.99' becomes 29.99."""
+        products = WebDriverWait(self.driver, 5).until(
+            EC.visibility_of_all_elements_located(self.INVENTORY_ITEM_PRICE)
+        )
+        return [float(product.text.replace('$', '')) for product in products]
 
-    def add_to_cart(self, product_slug):
-        """product_slug matches SauceDemo's data-test suffix, e.g. 'sauce-labs-backpack'.
-        Covers C1, C2."""
-        # TODO
-        pass
+    def add_to_cart(self, product_id):
+        """Clicks the Add to cart button for a given product ID.
+        Example ID: 'sauce-labs-backpack'."""
+        button = WebDriverWait(self.driver, 5).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, f'[data-test="add-to-cart-{product_id}"]'))
+        )
+        button.click()
+
+    def remove_from_cart(self, product_id):
+        """Clicks the Remove button for a product already in the cart.
+        This pattern is the same as add_to_cart, but the button's
+        data-test value starts with 'remove-'."""
+        button = WebDriverWait(self.driver, 5).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, f'[data-test="remove-{product_id}"]'))
+        )
+        button.click()
 
     def get_cart_count(self):
-        """Reads the cart badge number. Returns 0 if the badge isn't present
-        (empty cart shows no badge at all). Covers C1, C2, C4."""
-        # TODO
-        pass
+        """Returns the count shown in the cart badge.
+        If the cart is empty, there is no badge, so we return 0."""
+        badges = self.driver.find_elements(*self.CART_BADGE)
+        if not badges:
+            return 0
+        return int(badges[0].text)
 
     def go_to_cart(self):
-        # TODO
-        pass
+        """Clicks the cart icon and opens the cart page."""
+        cart_link = WebDriverWait(self.driver, 5).until(
+            EC.element_to_be_clickable(self.CART_LINK)
+        )
+        cart_link.click()

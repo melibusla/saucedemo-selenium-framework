@@ -68,6 +68,20 @@ tested on purpose, not skipped.
 ## Current status
 
 Check `Portfolio_Project_Plan.md`'s status checklist for the authoritative
-state. As of the last update: repo scaffolded and pushed, Login page object
-and JSON test data for L1-L6 in progress, other pages/tests are stubs with
+state. As of the last update: Login page object and tests are complete —
+L1-L8, 10 passing test cases (L8 is a manually-found visual-overflow bug in
+the error banner, added as a documented exception to the "visual regression
+out of scope" rule; see `Test_Coverage_Matrix.md`'s scope note). An
+accessibility observation on the login fields' error icon was deliberately
+deferred to v2, also noted there.
+
+`InventoryPage.is_loaded()` is implemented (needed to assert successful
+login); everything else in Inventory/Cart/Checkout is still stubs with
 `# TODO` markers matching their matrix case IDs.
+
+`conftest.py`'s `driver` fixture does **not** set a global implicit wait —
+it was removed because it made any "assert element is absent" check pay the
+full timeout. Page objects use an explicit `WebDriverWait` inside the
+specific method that needs to wait (see `LoginPage.get_error_message()` and
+`InventoryPage.is_loaded()` as examples). Follow that pattern in new page
+objects rather than reintroducing `driver.implicitly_wait()`.

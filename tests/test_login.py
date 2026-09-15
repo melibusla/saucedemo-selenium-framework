@@ -56,6 +56,10 @@ def test_invalid_credentials(driver, test_list_item):
     login_page.login(test_list_item["username"], test_list_item["password"])
     assert login_page.get_error_message() == test_list_item["expected_error"], "Expected error message for invalid credentials not displayed"
 
+    # Extra: the error banner's close button should dismiss it.
+    login_page.close_error_message()
+    assert not login_page.is_error_message_present(), "Error banner still present after clicking close"
+
 
 # L7 — performance_glitch_user login (document expected delay, not a failure)
 @pytest.mark.parametrize("test_list_item", [test_list[6]])
@@ -66,3 +70,17 @@ def test_performance_glitch_user_login(driver, test_list_item):
     login_page = LoginPage(driver)
     login_page.login(test_list_item["username"], test_list_item["password"])
     assert InventoryPage(driver).is_loaded(), "Inventory page did not load for performance_glitch_user"
+
+
+# L8 — Error message overflow at certain viewport widths (bug found manually,
+# confirmed with DevTools: the error text wraps to 3 lines and the extra line
+# spills past its fixed-height container at these widths). Uses the L6
+# credentials since that message is long enough to reproduce the wrap.
+@pytest.mark.parametrize("width,expect_overflow", [(400, True), (700, False), (950, True)])
+def test_error_message_overflow_at_viewport_widths(driver, width, expect_overflow):
+    driver.set_window_size(width, 800)
+    login_page = LoginPage(driver)
+    login_page.login(test_list[5]["username"], test_list[5]["password"])
+    assert login_page.is_error_message_overflowing() == expect_overflow, (
+        f"Unexpected overflow state at viewport width={width}"
+    )

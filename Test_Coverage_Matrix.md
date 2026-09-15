@@ -1,11 +1,11 @@
 # Test Coverage Matrix — SauceDemo Automation
 
-20 cases across 4 features. Positive and negative paths are balanced deliberately —
+21 cases across 4 features. Positive and negative paths are balanced deliberately —
 a portfolio built only on happy paths reads as tutorial-following, not test design.
 
 ---
 
-## Login (7 cases)
+## Login (8 cases)
 
 | # | Scenario | Type | Priority | Notes |
 |---|---|---|---|---|
@@ -16,6 +16,7 @@ a portfolio built only on happy paths reads as tutorial-following, not test desi
 | L5 | Both fields empty | Negative | Low | Edge case combining L3+L4 |
 | L6 | Invalid username/password combo | Negative | High | Distinguish from L2 — wrong credentials vs. locked account is a different error path |
 | L7 | `performance_glitch_user` login | Positive | Low | Not a functional bug, but worth documenting expected delay so it isn't mistaken for a failure in CI |
+| L8 | Error message overflow at certain viewport widths | Negative | Medium | Bug found manually while resizing the browser: the error banner wraps to 3 lines and the extra line spills past its fixed-height container, overlapping the Login button. Confirmed with DevTools at viewport widths <= 443px and >= 900px (clean between 444-899px). A targeted regression test for one specific found bug, not general visual-regression tooling — see scope note below |
 
 ## Inventory / Catalog (5 cases)
 
@@ -59,7 +60,15 @@ a portfolio built only on happy paths reads as tutorial-following, not test desi
   "extra" — they demonstrate testing against known-broken and known-slow states on
   purpose, which is closer to real regression testing than only testing the happy
   path.
-- **What's out of scope for v1:** cross-browser execution, visual regression, and
-  accessibility testing. Noted explicitly in the README as a "not yet" rather than
-  an oversight — same principle used for the model-evaluation threshold question in
-  interview prep: an honest scope boundary is stronger than pretending it's complete.
+- **What's out of scope for v1:** cross-browser execution, general visual-regression
+  tooling (screenshot diffing, pixel comparison), and accessibility testing. Noted
+  explicitly in the README as a "not yet" rather than an oversight — same principle
+  used for the model-evaluation threshold question in interview prep: an honest scope
+  boundary is stronger than pretending it's complete. L8 is the one exception: a
+  targeted regression test for a specific layout bug found manually, not part of a
+  visual-regression suite.
+- **Accessibility finding noted for v2:** the login fields' error state uses an icon
+  (`error_icon`, a `circle-xmark` SVG) alongside the red border, not color alone —
+  a deliberate WCAG 1.4.1 ("use of color") pattern. It's working correctly, so there's
+  no bug to regression-test yet; flagged here as a concrete candidate for a future
+  accessibility-testing pass rather than added to v1's scope.

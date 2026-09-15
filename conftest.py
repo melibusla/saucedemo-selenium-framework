@@ -39,7 +39,10 @@ def driver(request):
     else:
         raise ValueError(f"Unsupported browser: {browser_name}")
 
-    driver.implicitly_wait(10)
+    # No implicit wait — mixing implicit and explicit waits causes
+    # unpredictable delays (e.g. it waits out the full timeout when
+    # checking that an element is absent). Page objects that need to
+    # wait for something use an explicit WebDriverWait instead.
     driver.maximize_window()
     driver.get(BASE_URL)
 
