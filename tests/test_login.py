@@ -77,8 +77,18 @@ def test_performance_glitch_user_login(driver, test_list_item):
 # spills past its fixed-height container at these widths). Uses the L6
 # credentials since that message is long enough to reproduce the wrap.
 @pytest.mark.parametrize("width,expect_overflow", [(400, True), (700, False), (950, True)])
-def test_error_message_overflow_at_viewport_widths(driver, width, expect_overflow):
-    driver.set_window_size(width, 800)
+def test_error_message_overflow_at_viewport_widths(driver, request, width, expect_overflow):
+    if request.config.getoption("browser_name") != "chrome":
+        pytest.skip(
+            "Emulation.setDeviceMetricsOverride is a Chrome DevTools Protocol "
+            "command; no Firefox equivalent is used here."
+        )
+    driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", {
+        "width": width,
+        "height": 800,
+        "deviceScaleFactor": 1,
+        "mobile": False,
+    })
     login_page = LoginPage(driver)
     login_page.login(test_list[5]["username"], test_list[5]["password"])
     assert login_page.is_error_message_overflowing() == expect_overflow, (
