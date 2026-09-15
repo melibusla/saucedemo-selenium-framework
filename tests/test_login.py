@@ -78,11 +78,19 @@ def test_performance_glitch_user_login(driver, test_list_item):
 # credentials since that message is long enough to reproduce the wrap.
 @pytest.mark.parametrize("width,expect_overflow", [(400, True), (700, False), (950, True)])
 def test_error_message_overflow_at_viewport_widths(driver, request, width, expect_overflow):
+    # CDP viewport emulation (see below) is Chrome-specific — Firefox has no
+    # equivalent, so this test only runs when Chrome is the active browser.
     if request.config.getoption("browser_name") != "chrome":
         pytest.skip(
             "Emulation.setDeviceMetricsOverride is a Chrome DevTools Protocol "
             "command; no Firefox equivalent is used here."
         )
+    # Emulate the viewport width directly via Chrome DevTools Protocol instead
+    # of resizing the actual browser window. This avoids two OS-dependent
+    # problems: window manager quirks that can block resizing after
+    # maximize_window(), and the gap between requested window size and real
+    # innerWidth caused by window chrome (borders/title bar), which differs
+    # between Windows and Linux CI runners.
     driver.execute_cdp_cmd("Emulation.setDeviceMetricsOverride", {
         "width": width,
         "height": 800,
