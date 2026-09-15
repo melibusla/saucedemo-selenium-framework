@@ -1,3 +1,4 @@
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -18,10 +19,13 @@ class CartPage:
     def get_item_names(self):
         """Returns the names of every product in the cart.
         If the cart is empty, it returns an empty list instead of failing."""
-        items = self.driver.find_elements(*self.CART_ITEM_NAME)
-        if not items:
-            return []
-        return [item.text for item in items]
+        for _ in range(3):
+            try:
+                items = self.driver.find_elements(*self.CART_ITEM_NAME)
+                return [item.text for item in items]
+            except StaleElementReferenceException:
+                continue
+        return []
 
     def remove_item(self, product_id):
         """Clicks the remove button for a product using its product ID.

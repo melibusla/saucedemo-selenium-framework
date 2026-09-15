@@ -34,6 +34,11 @@
       "username":"performance_glitch_user",
       "password":"secret_sauce",
       "expected_error": null
+    },
+    {
+      "username":"problem_user",
+      "password":"secret_sauce",
+      "expected_error": null
     }
   ]
 }

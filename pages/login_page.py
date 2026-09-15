@@ -1,3 +1,5 @@
+import time
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -41,7 +43,19 @@ class LoginPage:
         overlaps the Login button. Confirmed via DevTools: happens at
         viewport widths <= 443px and >= 900px, clean between 444-899px.
         Covers L8."""
-        container = self.driver.find_element(*self.ERROR_MESSAGE).find_element(By.XPATH, "./..")
-        return self.driver.execute_script(
-            "return arguments[0].scrollHeight > arguments[0].clientHeight;", container
+        error_el = WebDriverWait(self.driver, 5).until(
+            EC.visibility_of_element_located(self.ERROR_MESSAGE)
         )
+        container = error_el.find_element(By.XPATH, "./..")
+
+        last_result = None
+        for _ in range(5):
+            current_result = self.driver.execute_script(
+                "return arguments[0].scrollHeight > arguments[0].clientHeight;", container
+            )
+            if current_result == last_result:
+                return current_result
+            last_result = current_result
+            time.sleep(0.1)
+
+        return bool(last_result)
