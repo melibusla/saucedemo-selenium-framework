@@ -57,77 +57,17 @@ class InventoryPage:
         )
         return [float(product.text.replace('$', '')) for product in products]
 
-    def add_to_cart(self, product_identifier):
-        """Clicks the Add to cart button for a product.
-
-        Accepts either a product slug (e.g. 'sauce-labs-backpack') or the visible
-        product name (e.g. 'Sauce Labs Backpack'). The selector logic normalizes
-        the value to cover the common variants used by the page and the tests.
-        """
-        import re
-
-        def slugify(name: str) -> str:
-            s = name.lower().strip()
-            s = re.sub(r"[^a-z0-9]+", "-", s)
-            return s.strip("-")
-
-        def normalized_name(name: str) -> str:
-            return re.sub(r"\s+", " ", name).strip().lower()
-
-        def click_button(button):
-            button.click()
-            try:
-                WebDriverWait(self.driver, 5).until(
-                    lambda d: self.get_cart_count() >= 1
-                )
-            except TimeoutException:
-                pass
-
-        product_identifier = str(product_identifier).strip()
-        candidates = {
-            product_identifier,
-            slugify(product_identifier),
-            product_identifier.lower(),
-            product_identifier.replace(" ", "-"),
-            product_identifier.replace(" ", "_"),
-            normalized_name(product_identifier),
-        }
-
-        for cand in candidates:
-            if not cand:
-                continue
-            selector = (By.CSS_SELECTOR, f'[data-test="add-to-cart-{cand}"]')
-            try:
-                button = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable(selector)
-                )
-                click_button(button)
-                return
-            except TimeoutException:
-                continue
-
-        items = WebDriverWait(self.driver, 5).until(
-            EC.visibility_of_all_elements_located((By.CLASS_NAME, "inventory_item"))
+    def add_to_cart(self, product_name):
+        """Clicks the Add to cart button for a product, given its visible
+        name (e.g. 'Sauce Labs Backpack'). SauceDemo's data-test attributes
+        are always the name lowercased with spaces turned into hyphens
+        (e.g. 'add-to-cart-sauce-labs-backpack')."""
+        slug = product_name.strip().lower().replace(" ", "-")
+        selector = (By.CSS_SELECTOR, f'[data-test="add-to-cart-{slug}"]')
+        button = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(selector)
         )
-        target_name = normalized_name(product_identifier)
-        for item in items:
-            try:
-                name_el = item.find_element(By.CLASS_NAME, "inventory_item_name")
-                item_name = normalized_name(name_el.text)
-                if item_name == target_name:
-                    buttons = item.find_elements(By.CSS_SELECTOR, "button")
-                    for btn in buttons:
-                        data_test = (btn.get_attribute("data-test") or "").lower()
-                        button_text = (btn.text or "").strip().lower()
-                        if "add-to-cart" in data_test or button_text.startswith("add to cart"):
-                            click_button(btn)
-                            return
-            except Exception:
-                continue
-
-        raise TimeoutException(
-            f"Add to cart button for '{product_identifier}' not found on inventory page"
-        )
+        button.click()
 
     def remove_from_cart(self, product_id):
         """Clicks the Remove button for a product already in the cart.

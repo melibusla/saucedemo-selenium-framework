@@ -75,9 +75,23 @@ out of scope" rule; see `Test_Coverage_Matrix.md`'s scope note). An
 accessibility observation on the login fields' error icon was deliberately
 deferred to v2, also noted there.
 
-`InventoryPage.is_loaded()` is implemented (needed to assert successful
-login); everything else in Inventory/Cart/Checkout is still stubs with
-`# TODO` markers matching their matrix case IDs.
+`InventoryPage` (sort, product listing, add/remove to cart, cart badge count)
+and `CartPage` are implemented. Inventory sort tests I1-I5 pass (I5 is
+`xfail`-marked, documenting `problem_user`'s broken sort on purpose). Cart
+test C1 (add single item) passes; C2-C4 are still stubs. `CheckoutPage` and
+all of `test_checkout.py` (CO1-CO6) are still stubs with `# TODO` markers
+matching their matrix case IDs.
+
+`InventoryPage.add_to_cart(product_name)` takes the product's visible name
+and builds its `data-test` selector directly (lowercase, spaces to hyphens)
+— don't reintroduce a multi-candidate "guess the selector" fallback here.
+An earlier version tried several slug variants in sequence, each with its
+own failed 5s `WebDriverWait`; on this site that ~15-20s of accumulated
+delay was enough to trigger a real headless-Chrome quirk where native
+WebDriver clicks silently stop registering after the page has sat idle for
+about 10s (confirmed via `document.hasFocus()` returning `False`; a JS-
+dispatched `element.click()` still worked when the native click didn't).
+Keeping `add_to_cart` fast and direct avoids the idle window entirely.
 
 `conftest.py`'s `driver` fixture does **not** set a global implicit wait —
 it was removed because it made any "assert element is absent" check pay the

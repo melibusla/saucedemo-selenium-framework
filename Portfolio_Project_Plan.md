@@ -81,12 +81,13 @@ Written in English. Must include:
 - [x] Write test coverage matrix — see `Test_Coverage_Matrix.md`
 - [x] Create new repo on GitHub — https://github.com/melibusla/saucedemo-selenium-framework (separate from `python-selenium-practice`, which stays as the course/practice repo)
 - [x] Scaffold repo structure
-- [ ] Implement Page Objects — `LoginPage` complete; `InventoryPage.is_loaded()`
-      done (needed for login assertions), rest of Inventory/Cart/Checkout still
-      stubs
+- [ ] Implement Page Objects — `LoginPage`, `InventoryPage`, `CartPage` complete;
+      `CheckoutPage` still stubs
 - [ ] Implement test cases against the matrix — Login suite done (L1-L8, 10
-      passing tests, incl. L8 bug found during manual exploration); Inventory,
-      Cart, Checkout not started
+      passing tests, incl. L8 bug found during manual exploration); Inventory
+      sort suite done (I1-I5, incl. I5 documented as `xfail` for problem_user);
+      Cart: C1 (add single item) passing, C2-C4 still stubs; Checkout
+      (CO1-CO6) not started
 - [ ] Set up GitHub Actions
 - [ ] Write README
 - [ ] Publish repo, link from CV and LinkedIn
