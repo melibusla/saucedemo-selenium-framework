@@ -12,6 +12,8 @@ class CheckoutPage:
     ERROR_MESSAGE = (By.CSS_SELECTOR, "[data-test='error']")
 
     # Overview step (second page of checkout)
+    ITEM_NAME = (By.CLASS_NAME, "inventory_item_name")
+    ITEM_PRICE = (By.CLASS_NAME, "inventory_item_price")
     ITEM_TOTAL = (By.CLASS_NAME, "summary_subtotal_label")
     TAX_LABEL = (By.CLASS_NAME, "summary_tax_label")
     TOTAL_LABEL = (By.CLASS_NAME, "summary_total_label")
@@ -19,6 +21,8 @@ class CheckoutPage:
 
     # Confirmation step (third page)
     COMPLETE_HEADER = (By.CLASS_NAME, "complete-header")
+    BACK_HOME_BUTTON = (By.ID, "back-to-products")
+    GENERATE_PDF_BUTTON = (By.ID, "generate-pdf-order")
 
     def __init__(self, driver):
         self.driver = driver
@@ -68,6 +72,16 @@ class CheckoutPage:
         )
         self.driver.execute_script("arguments[0].click();", button)
 
+    def get_line_items(self):
+        """Returns [(name, price_text), ...] for each product on the
+        overview page. Reuses the same 'inventory_item_name' /
+        'inventory_item_price' classes as the inventory and cart pages —
+        confirmed by inspection that SauceDemo renders this list with the
+        same components, in the same order (name[i] pairs with price[i])."""
+        names = self.driver.find_elements(*self.ITEM_NAME)
+        prices = self.driver.find_elements(*self.ITEM_PRICE)
+        return list(zip((n.text for n in names), (p.text for p in prices)))
+
     def get_summary_totals(self):
         """Returns (item_total, tax, total) as floats.
         Example text: 'Item total: $29.99' -> 29.99"""
@@ -103,3 +117,29 @@ class CheckoutPage:
         except Exception:
             return False
         return "THANK YOU FOR YOUR ORDER" in header.text.upper()
+
+    def back_home(self):
+        """Clicks 'Back Home' on the order confirmation page, returning to
+        the inventory page. Shares its id ('back-to-products') with
+        ProductPage.back_to_products — SauceDemo reuses the same button id
+        across pages — but this is the confirmation page's button.
+
+        Clicks via JS — see CartPage.remove_item's docstring for why
+        (native clicks can silently no-op here after a prior click/navigation)."""
+        button = WebDriverWait(self.driver, 5).until(
+            EC.element_to_be_clickable(self.BACK_HOME_BUTTON)
+        )
+        self.driver.execute_script("arguments[0].click();", button)
+
+    def generate_pdf_order(self):
+        """Clicks 'Generate PDF order' on the confirmation page, which
+        triggers a browser file download. The click alone doesn't confirm
+        the file arrived — see test_generate_pdf_order for how the download
+        itself is verified.
+
+        Clicks via JS — see CartPage.remove_item's docstring for why
+        (native clicks can silently no-op here after a prior click/navigation)."""
+        button = WebDriverWait(self.driver, 5).until(
+            EC.element_to_be_clickable(self.GENERATE_PDF_BUTTON)
+        )
+        self.driver.execute_script("arguments[0].click();", button)

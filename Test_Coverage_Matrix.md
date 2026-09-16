@@ -1,7 +1,8 @@
 # Test Coverage Matrix — SauceDemo Automation
 
-21 cases across 4 features. Positive and negative paths are balanced deliberately —
-a portfolio built only on happy paths reads as tutorial-following, not test design.
+25 cases across 4 features (8 Login + 5 Inventory + 4 Cart + 8 Checkout).
+Positive and negative paths are balanced deliberately — a portfolio built
+only on happy paths reads as tutorial-following, not test design.
 
 ---
 
@@ -37,7 +38,7 @@ a portfolio built only on happy paths reads as tutorial-following, not test desi
 | C3 | Remove item from cart | Positive | High | Both from inventory page and cart page, if UI allows both |
 | C4 | Cart persists across navigation | Positive | Medium | Add item, navigate away, confirm it's still there — this is the kind of state-consistency bug from your LinkedIn mobile case, applied here |
 
-## Checkout (4 cases)
+## Checkout (8 cases)
 
 | # | Scenario | Type | Priority | Notes |
 |---|---|---|---|---|
@@ -47,6 +48,8 @@ a portfolio built only on happy paths reads as tutorial-following, not test desi
 | CO4 | Missing postal code | Negative | Medium | |
 | CO5 | Cancel mid-checkout | Negative | Medium | Confirm cart state is preserved, not silently cleared |
 | CO6 | Order total calculation | Positive | High | Sum of item prices + tax matches displayed total — this is the case most likely to catch a real business-logic bug, not just a UI issue |
+| CO7 | Generate PDF order + Back Home | Positive | Medium | On the confirmation page: clicking "Generate PDF order" triggers a real browser file download (verified by polling the download folder and checking the file starts with the `%PDF` magic bytes, not just that the click didn't error), then "Back Home" returns to the product catalog. Chrome-only: downloads are unblocked via the `Page.setDownloadBehavior` DevTools Protocol command, which has no Firefox equivalent |
+| CO8 | PDF order receipt content matches checkout | Positive | High | Reads the downloaded PDF's text (via `pypdf`) and asserts the shipping name, postal code, each line item's name+price, and the item total/tax/total all match what was actually entered and displayed during checkout — not just that a PDF exists (that's CO7). Expected values are read off the checkout overview page rather than hardcoded, so the test still holds if catalog prices change |
 
 ---
 

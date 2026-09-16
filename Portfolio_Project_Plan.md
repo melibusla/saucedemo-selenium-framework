@@ -83,14 +83,17 @@ Written in English. Must include:
 - [x] Scaffold repo structure
 - [x] Implement Page Objects — `LoginPage`, `InventoryPage`, `CartPage`,
       `ProductPage`, `CheckoutPage` all complete
-- [x] Implement test cases against the matrix — all 21 cases implemented and
+- [x] Implement test cases against the matrix — all 25 cases implemented and
       passing: Login (L1-L8, incl. L8 bug found during manual exploration),
       Inventory sort (I1-I5, incl. I5 documented as `xfail` for
-      problem_user), Cart (C1-C4), Checkout (CO1-CO6, incl. one bonus case
-      beyond the matrix covering cancel-after-overview behavior). Shared
+      problem_user), Cart (C1-C4), Checkout (CO1-CO8, incl. one bonus case
+      beyond the matrix covering cancel-after-overview behavior; CO7 covers
+      the "Generate PDF order" file download + "Back Home" on the
+      confirmation page, CO8 verifies the PDF's actual content against what
+      was entered/displayed during checkout, both Chrome-only). Shared
       "logged in with items in cart" / "on checkout step one" setup lives in
-      `conftest.py` fixtures (`products_in_cart`, `checkout_step_one`) rather
-      than being copy-pasted per test.
+      `conftest.py` fixtures (`products_in_cart`, `checkout_step_one`)
+      rather than being copy-pasted per test.
 - [ ] Set up GitHub Actions
 - [ ] Write README
 - [ ] Publish repo, link from CV and LinkedIn

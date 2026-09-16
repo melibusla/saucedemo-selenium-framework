@@ -264,3 +264,119 @@ sigue funcionando exactamente igual (porque `submit=True` es el default). El
 `fill_info(..., submit=False)`. Es un patrón común en Page Object Model para
 cubrir una variación chica de un flujo sin duplicar código ni crear un método
 nuevo por cada variante.
+
+---
+
+## 2026-09-16 — Descargar y leer un PDF con Selenium (CO7 y CO8)
+
+Contexto: `test_generate_pdf_order` (CO7) descarga el PDF que genera SauceDemo
+en la pantalla de confirmación, y `test_pdf_order_contents_match_checkout`
+(CO8) abre ese PDF y verifica que el contenido sea correcto. Selenium no sabe
+nada de archivos descargados ni de PDFs — todo esto es "ecosistema alrededor"
+de Selenium, no Selenium en sí.
+
+### Problema 1: Chrome headless bloquea las descargas por defecto
+
+Cuando corrés Chrome sin ventana (headless, como en este proyecto), por
+seguridad viene bloqueado que las páginas descarguen archivos a tu disco sin
+que vos lo autorices explícitamente. Si no hacés nada, apretar "Generate PDF
+order" no descarga nada y no tira ningún error — el archivo simplemente
+nunca aparece.
+
+La solución es un comando de **Chrome DevTools Protocol (CDP)** — una API
+que te deja controlar el navegador a un nivel más bajo que los comandos
+normales de Selenium (`click()`, `find_element()`, etc.):
+
+```python
+driver.execute_cdp_cmd("Page.setDownloadBehavior", {
+    "behavior": "allow",
+    "downloadPath": str(tmp_path),
+})
+```
+
+Esto le dice a Chrome: "a partir de ahora, cualquier descarga que se dispare
+en esta pestaña, permitila y guardala en esta carpeta". `tmp_path` es un
+fixture que ya trae pytest incorporado: te da una carpeta temporal nueva y
+vacía para cada test, y pytest se encarga de no dejarla acumulada para
+siempre.
+
+Como este comando es específico de Chrome (no existe un equivalente en
+Firefox), el fixture `download_dir` solo lo ejecuta si `browser_name ==
+"chrome"`, y los tests que lo usan se saltan a sí mismos en Firefox con
+`pytest.skip(...)` — el mismo patrón que ya usa el test de overflow del
+banner de error (L8) para su propio comando CDP específico de Chrome.
+
+### Problema 2: la descarga no es instantánea
+
+Hacer clic en el botón dispara la descarga, pero el archivo no aparece en el
+disco en el mismo instante — el navegador todavía lo está escribiendo. Y
+mientras lo escribe, Chrome le pone el sufijo `.crdownload` al archivo (por
+ejemplo `orden.pdf.crdownload`), y recién lo renombra a `orden.pdf` cuando
+termina.
+
+Por eso `_wait_for_download` no busca el archivo una sola vez — hace polling
+(reintenta cada 0.2 segundos) hasta que aparece un `.pdf` Y ya no queda
+ningún `.crdownload` dando vueltas:
+
+```python
+def _wait_for_download(directory, timeout=10):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        entries = list(directory.iterdir())
+        in_progress = [f for f in entries if f.suffix == ".crdownload"]
+        pdf_files = [f for f in entries if f.suffix == ".pdf"]
+        if pdf_files and not in_progress:
+            return pdf_files
+        time.sleep(0.2)
+    raise TimeoutError(...)
+```
+
+Es el mismo espíritu que un `WebDriverWait`, pero acá no estamos esperando
+algo en el DOM de la página — estamos esperando algo en el sistema de
+archivos, así que no hay ninguna herramienta de Selenium que sirva; hay que
+escribir el polling a mano.
+
+### Problema 3: ¿cómo "leo" un PDF desde Python?
+
+Un PDF no es texto plano — es un formato binario con su propia estructura
+interna (fuentes, posiciones de cada letra en la página, etc.). Para sacarle
+el texto hace falta una librería que sepa parsear ese formato. Se usó
+`pypdf` (se agregó a `requirements.txt`):
+
+```python
+from pypdf import PdfReader
+
+def _extract_pdf_text(path):
+    reader = PdfReader(str(path))
+    return "\n".join(page.extract_text() for page in reader.pages)
+```
+
+`PdfReader(path)` abre el archivo y lo interpreta. `reader.pages` es una
+lista de páginas (acá el PDF tiene una sola). `.extract_text()` le pide a la
+librería que reconstruya el texto "legible" a partir de esa estructura
+interna — el resultado es básicamente lo mismo que verías si abrís el PDF y
+seleccionás todo el texto con el mouse para copiarlo.
+
+Con el texto ya como un string normal de Python, verificarlo es un `assert
+... in texto` como cualquier otro:
+
+```python
+assert f"{first_name} {last_name}" in pdf_text
+assert f"Item total ${item_total:.2f}" in pdf_text
+```
+
+### Por qué no hardcodear los precios esperados
+
+Se podría haber escrito directamente `assert "Sauce Labs Backpack $29.99" in
+pdf_text`, pero eso "sabe" un precio de memoria en vez de verificarlo contra
+la fuente real. Si mañana SauceDemo cambia ese precio, el test seguiría
+comparando contra el número viejo, dando un falso positivo (o un falso
+negativo si el número cambia y vos lo escribiste mal a mano).
+
+En cambio, `CheckoutPage.get_line_items()` lee nombre y precio de la propia
+página de overview del checkout (`checkout-step-two.html`), justo antes de
+terminar la compra, y esos son los valores contra los que se compara el
+PDF. Así el test verifica algo real: "lo que la página mostró es lo mismo
+que lo que salió en el PDF" — que es exactamente el tipo de bug que
+importaría encontrar (una demo desincronización entre lo que el usuario ve
+en pantalla y lo que termina en el comprobante).

@@ -51,8 +51,8 @@ from `python-selenium-practice` (the course exercises repo).
 
 ## Test coverage matrix (see `Test_Coverage_Matrix.md`)
 
-20 cases across Login (L1-L7), Inventory/Catalog (I1-I5), Cart (C1-C4), and
-Checkout (CO1-CO6). Test function names should stay traceable to these IDs
+25 cases across Login (L1-L8), Inventory/Catalog (I1-I5), Cart (C1-C4), and
+Checkout (CO1-CO8). Test function names should stay traceable to these IDs
 (see comments in each `tests/test_*.py` file). Negative cases are deliberate —
 each maps to a distinct failure mode (auth rejection, field validation, state
 persistence, calculation logic), not repeated variations of the same one.
@@ -90,12 +90,37 @@ and `CartPage` are implemented. Inventory sort tests I1-I5 pass (I5 is
 tests C1-C4 (add single/multiple items, remove item from both the inventory
 and cart pages, cart persists across navigation) all pass. `ProductPage`
 (product detail page: add/remove to cart, back to products) is implemented,
-used by C4. `CheckoutPage` is implemented; all of CO1-CO6 pass (happy path
+used by C4. `CheckoutPage` is implemented; all of CO1-CO8 pass (happy path
 through Finish/order confirmation, missing first/last name, missing postal
-code, cancel mid-checkout, order total calculation), plus one bonus test
-beyond the matrix (`test_cancel_order_after_calculation`) covering the
-cancel-from-overview behavior noted below. All 21 matrix cases are now
-implemented — see `Portfolio_Project_Plan.md`'s status checklist.
+code, cancel mid-checkout, order total calculation, generating the PDF order
++ Back Home on the confirmation page, and the PDF's content matching
+checkout), plus one bonus test beyond the matrix
+(`test_cancel_order_after_calculation`) covering the cancel-from-overview
+behavior noted below. All 25 matrix cases are now implemented — see
+`Portfolio_Project_Plan.md`'s status checklist.
+
+CO7 (`test_generate_pdf_order`) downloads a real file, which headless Chrome
+blocks by default. It's unblocked per-test via
+`driver.execute_cdp_cmd("Page.setDownloadBehavior", {"behavior": "allow", "downloadPath": ...})`
+in the `download_dir` fixture in `test_checkout.py` (not in the shared
+`driver` fixture — only these two tests need it, and the CDP call works fine
+on an already-created driver, no need to touch ChromeOptions for it). Since
+`execute_cdp_cmd` is Chrome-only, both CO7 and CO8 skip themselves on
+Firefox, same pattern as L8's viewport emulation test. The download itself
+is verified by polling the temp download directory for a `.pdf` file with
+no `.crdownload` file left alongside it (downloads are asynchronous), then
+checking it starts with the `%PDF` magic bytes — not just that the click
+didn't raise.
+
+CO8 (`test_pdf_order_contents_match_checkout`) reads the downloaded PDF's
+text with `pypdf` (`PdfReader(path).pages[i].extract_text()`) and checks it
+against the shipping name/postal code that were typed in, and the line
+items/totals read off the checkout overview page via
+`CheckoutPage.get_line_items()` (reuses the same `inventory_item_name` /
+`inventory_item_price` classes as the inventory and cart pages — confirmed
+by inspection that SauceDemo renders the overview's item list with the same
+components) — not hardcoded prices, so the test still holds if catalog
+prices change. `pypdf` is in `requirements.txt`.
 
 `test_cart.py` and `test_checkout.py` share two `conftest.py` fixtures for
 their common "arrange" phase instead of repeating it per test:
