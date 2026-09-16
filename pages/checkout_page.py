@@ -54,6 +54,15 @@ class CheckoutPage:
             element.clear()
             if value:
                 element.send_keys(value)
+                # On slower CI runners, get_error_message() has caught the
+                # app validating against a not-yet-committed field value —
+                # e.g. "First Name is required" even though "John" was just
+                # typed. send_keys() returning doesn't guarantee the site's
+                # own state has caught up, so wait for the DOM to actually
+                # reflect what we typed before moving on.
+                WebDriverWait(self.driver, 5).until(
+                    lambda d, locator=locator, value=value: d.find_element(*locator).get_attribute("value") == value
+                )
 
         if submit:
             button = WebDriverWait(self.driver, 5).until(
