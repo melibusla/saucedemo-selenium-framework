@@ -53,13 +53,15 @@ class CheckoutPage:
             )
             element.clear()
             if value:
+                # Same headless-Chrome "document.hasFocus() is False" quirk
+                # as the JS-click fix (see CartPage.remove_item's docstring)
+                # can also swallow send_keys()'s implicit focus/keystrokes —
+                # on CI this showed up as fields silently staying empty
+                # (e.g. the app reporting "First Name is required" right
+                # after typing "John" into it). Forcing focus via JS first
+                # sidesteps the same focus dependency.
+                self.driver.execute_script("arguments[0].focus();", element)
                 element.send_keys(value)
-                # On slower CI runners, get_error_message() has caught the
-                # app validating against a not-yet-committed field value —
-                # e.g. "First Name is required" even though "John" was just
-                # typed. send_keys() returning doesn't guarantee the site's
-                # own state has caught up, so wait for the DOM to actually
-                # reflect what we typed before moving on.
                 WebDriverWait(self.driver, 5).until(
                     lambda d, locator=locator, value=value: d.find_element(*locator).get_attribute("value") == value
                 )
