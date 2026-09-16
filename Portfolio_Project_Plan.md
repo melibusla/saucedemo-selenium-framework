@@ -81,13 +81,16 @@ Written in English. Must include:
 - [x] Write test coverage matrix — see `Test_Coverage_Matrix.md`
 - [x] Create new repo on GitHub — https://github.com/melibusla/saucedemo-selenium-framework (separate from `python-selenium-practice`, which stays as the course/practice repo)
 - [x] Scaffold repo structure
-- [ ] Implement Page Objects — `LoginPage`, `InventoryPage`, `CartPage`,
-      `ProductPage` complete; `CheckoutPage` still stubs
-- [ ] Implement test cases against the matrix — Login suite done (L1-L8, 10
-      passing tests, incl. L8 bug found during manual exploration); Inventory
-      sort suite done (I1-I5, incl. I5 documented as `xfail` for problem_user);
-      Cart suite done (C1-C4: add single/multiple items, remove item, cart
-      persists across navigation); Checkout (CO1-CO6) not started
+- [x] Implement Page Objects — `LoginPage`, `InventoryPage`, `CartPage`,
+      `ProductPage`, `CheckoutPage` all complete
+- [x] Implement test cases against the matrix — all 21 cases implemented and
+      passing: Login (L1-L8, incl. L8 bug found during manual exploration),
+      Inventory sort (I1-I5, incl. I5 documented as `xfail` for
+      problem_user), Cart (C1-C4), Checkout (CO1-CO6, incl. one bonus case
+      beyond the matrix covering cancel-after-overview behavior). Shared
+      "logged in with items in cart" / "on checkout step one" setup lives in
+      `conftest.py` fixtures (`products_in_cart`, `checkout_step_one`) rather
+      than being copy-pasted per test.
 - [ ] Set up GitHub Actions
 - [ ] Write README
 - [ ] Publish repo, link from CV and LinkedIn

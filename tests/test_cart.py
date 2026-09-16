@@ -19,13 +19,9 @@ def test_add_single_item(driver):
     assert product[0] == "Sauce Labs Backpack"
 
 # C2 — Add multiple items
-def test_add_multiple_items(driver):
-    products = ["Sauce Labs Backpack", "Sauce Labs Bike Light"]
-    login_page = LoginPage(driver)
-    login_page.login(VALID_USER["username"], VALID_USER["password"])
+def test_add_multiple_items(driver, products_in_cart):
+    products = products_in_cart
     inventory_page = InventoryPage(driver)
-    for product in products:
-        inventory_page.add_to_cart(product)
     cart_count = inventory_page.get_cart_count()
     assert cart_count == len(products)
     inventory_page.go_to_cart()
@@ -47,13 +43,9 @@ def test_remove_item_while_in_inventory(driver):
 
 
 # C4 — Cart persists across navigation
-def test_cart_persists_across_navigation(driver):
-    products = ["Sauce Labs Backpack", "Sauce Labs Bike Light"]
-    login_page = LoginPage(driver)
-    login_page.login(VALID_USER["username"], VALID_USER["password"])
+def test_cart_persists_across_navigation(driver, products_in_cart):
+    products = products_in_cart
     inventory_page = InventoryPage(driver)
-    for product in products:
-        inventory_page.add_to_cart(product)
     cart_count = inventory_page.get_cart_count()
     assert cart_count == len(products)
     inventory_page.go_to_cart()
@@ -71,13 +63,8 @@ def test_cart_persists_across_navigation(driver):
     inventory_page.go_to_cart()
     assert sorted(cart_page.get_item_names()) == sorted(products)
 
-def test_remove_item_from_cart(driver):
-    products = ["Sauce Labs Backpack", "Sauce Labs Bike Light"]
-    login_page = LoginPage(driver)
-    login_page.login(VALID_USER["username"], VALID_USER["password"])
+def test_remove_item_from_cart(driver, products_in_cart):
     inventory_page = InventoryPage(driver)
-    for product in products:
-        inventory_page.add_to_cart(product)
     inventory_page.go_to_cart()
     cart_page = CartPage(driver)
     cart_page.remove_item("sauce-labs-backpack")

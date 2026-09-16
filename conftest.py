@@ -1,11 +1,15 @@
-import os
-
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
+from pages.cart_page import CartPage
+from pages.inventory_page import InventoryPage
+from pages.login_page import LoginPage
+from tests.test_data_loader import VALID_USER
+
 BASE_URL = "https://www.saucedemo.com/"
+TWO_PRODUCTS = ["Sauce Labs Backpack", "Sauce Labs Bike Light"]
 
 
 def pytest_addoption(parser):
@@ -48,3 +52,25 @@ def driver(request):
     yield driver
 
     driver.quit()
+
+
+@pytest.fixture()
+def products_in_cart(driver):
+    """Logs in as VALID_USER and adds TWO_PRODUCTS to the cart. Leaves the
+    browser on the inventory page. Returns the product list so tests don't
+    have to redeclare it."""
+    login_page = LoginPage(driver)
+    login_page.login(VALID_USER["username"], VALID_USER["password"])
+    inventory_page = InventoryPage(driver)
+    for product in TWO_PRODUCTS:
+        inventory_page.add_to_cart(product)
+    return TWO_PRODUCTS
+
+
+@pytest.fixture()
+def checkout_step_one(driver, products_in_cart):
+    """Builds on products_in_cart: navigates to the cart, then to checkout
+    step one (the shipping info form). Returns the same product list."""
+    InventoryPage(driver).go_to_cart()
+    CartPage(driver).go_to_checkout()
+    return products_in_cart

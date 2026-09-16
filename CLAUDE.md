@@ -36,10 +36,18 @@ from `python-selenium-practice` (the course exercises repo).
 - **Data-driven tests:** JSON files under `data/`, parsed as lists of dicts,
   used with `pytest.mark.parametrize`. Optional fields (e.g. `expected_error`)
   should be read with `.get()`, not `[...]`, since not every row has them.
-- **conftest.py:** `driver` fixture, `--browser_name` CLI flag (chrome/firefox),
-  headless + Linux flags applied conditionally via `os.environ.get("CI")`.
+- **conftest.py:** `driver` fixture, `--browser_name` CLI flag (chrome/firefox).
+  Headless + the Linux Chrome flags (`--no-sandbox`, `--disable-dev-shm-usage`)
+  are applied unconditionally, not gated on `os.environ.get("CI")` — that was
+  an earlier design that didn't make it into the code; headless is just
+  always on now, locally and in CI, to avoid a browser window popping up
+  during local runs. Also holds `TWO_PRODUCTS` and the `products_in_cart` /
+  `checkout_step_one` fixtures shared by `test_cart.py` and
+  `test_checkout.py` — most cart/checkout tests need "logged in with 2 items
+  in the cart" (optionally "on checkout step one") as their starting state,
+  so that setup lives in one place instead of being copy-pasted per test.
 - **CI:** GitHub Actions (`.github/workflows/tests.yml`), runs pytest headless
-  on every push.
+  on every push, matrixed across `ubuntu-latest` and `windows-latest`.
 
 ## Test coverage matrix (see `Test_Coverage_Matrix.md`)
 
@@ -82,8 +90,25 @@ and `CartPage` are implemented. Inventory sort tests I1-I5 pass (I5 is
 tests C1-C4 (add single/multiple items, remove item from both the inventory
 and cart pages, cart persists across navigation) all pass. `ProductPage`
 (product detail page: add/remove to cart, back to products) is implemented,
-used by C4. `CheckoutPage` and all of `test_checkout.py` (CO1-CO6) are still
-stubs with `# TODO` markers matching their matrix case IDs.
+used by C4. `CheckoutPage` is implemented; all of CO1-CO6 pass (happy path
+through Finish/order confirmation, missing first/last name, missing postal
+code, cancel mid-checkout, order total calculation), plus one bonus test
+beyond the matrix (`test_cancel_order_after_calculation`) covering the
+cancel-from-overview behavior noted below. All 21 matrix cases are now
+implemented — see `Portfolio_Project_Plan.md`'s status checklist.
+
+`test_cart.py` and `test_checkout.py` share two `conftest.py` fixtures for
+their common "arrange" phase instead of repeating it per test:
+`products_in_cart` (logs in, adds `TWO_PRODUCTS` to the cart) and
+`checkout_step_one` (builds on that, navigates to cart then checkout step
+one). Add to these, or add a similar fixture, rather than reintroducing a
+copy-pasted `products = [...]` + login + add-to-cart block in a new test.
+
+**Gotcha:** the checkout "Cancel" button goes to different pages depending
+on which step it's clicked from — `cart.html` from checkout-step-one, but
+`inventory.html` (not the cart!) from checkout-step-two. `fill_info()` now
+takes `submit=False` to stop at step one for tests that need to cancel back
+to the cart — see memory `project_checkout_cancel_destination`.
 
 `InventoryPage.add_to_cart(product_name)` takes the product's visible name
 and builds its `data-test` selector directly (lowercase, spaces to hyphens)

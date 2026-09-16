@@ -23,9 +23,15 @@ class CheckoutPage:
     def __init__(self, driver):
         self.driver = driver
 
-    def fill_info(self, first_name, last_name, postal_code):
+    def fill_info(self, first_name, last_name, postal_code, submit=True):
         """Fills the checkout form. Passing an empty string leaves a field blank
-        so the app can show the required-field validation error."""
+        so the app can show the required-field validation error.
+
+        submit=False fills the fields but doesn't click Continue, leaving the
+        page on checkout-step-one. This matters for cancel(): the Cancel
+        button behaves differently depending on step — step one returns to
+        the cart, step two (after Continue) returns to the inventory page
+        instead. See test_cancel_mid_checkout."""
         fields = [
             (self.FIRST_NAME_INPUT, first_name),
             (self.LAST_NAME_INPUT, last_name),
@@ -40,9 +46,10 @@ class CheckoutPage:
             if value:
                 element.send_keys(value)
 
-        WebDriverWait(self.driver, 5).until(
-            EC.element_to_be_clickable(self.CONTINUE_BUTTON)
-        ).click()
+        if submit:
+            WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable(self.CONTINUE_BUTTON)
+            ).click()
 
     def get_error_message(self):
         """Returns the validation error text shown when a required field is blank."""
@@ -52,14 +59,21 @@ class CheckoutPage:
         return error.text
 
     def cancel(self):
-        """Clicks the cancel button. Useful for the mid-checkout test."""
-        WebDriverWait(self.driver, 5).until(
+        """Clicks the cancel button. Useful for the mid-checkout test.
+
+        Clicks via JS — see CartPage.remove_item's docstring for why
+        (native clicks can silently no-op here after a prior click/navigation)."""
+        button = WebDriverWait(self.driver, 5).until(
             EC.element_to_be_clickable(self.CANCEL_BUTTON)
-        ).click()
+        )
+        self.driver.execute_script("arguments[0].click();", button)
 
     def get_summary_totals(self):
         """Returns (item_total, tax, total) as floats.
         Example text: 'Item total: $29.99' -> 29.99"""
+        WebDriverWait(self.driver, 5).until(
+            EC.visibility_of_element_located(self.TOTAL_LABEL)
+        )
         item_total = self.driver.find_element(*self.ITEM_TOTAL).text
         tax = self.driver.find_element(*self.TAX_LABEL).text
         total = self.driver.find_element(*self.TOTAL_LABEL).text

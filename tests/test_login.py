@@ -16,7 +16,8 @@ def test_valid_login(driver, test_list_item):
     login_page = LoginPage(driver)
     login_page.login(test_list_item["username"], test_list_item["password"])
     assert InventoryPage(driver).is_loaded(), "Inventory page did not load after valid login"
-    pass
+
+
 # L2 — Locked-out user
 @pytest.mark.parametrize("test_list_item", [test_list[1]])
 def test_locked_out_user(driver, test_list_item):
@@ -65,8 +66,8 @@ def test_invalid_credentials(driver, test_list_item):
 @pytest.mark.parametrize("test_list_item", [test_list[6]])
 def test_performance_glitch_user_login(driver, test_list_item):
     # This user has valid credentials but the site adds an artificial delay
-    # before redirecting to inventory. implicitly_wait(10) in conftest.py
-    # covers it — no extra wait needed here.
+    # before redirecting to inventory. InventoryPage.is_loaded() has its own
+    # WebDriverWait(10) that covers it — no extra wait needed here.
     login_page = LoginPage(driver)
     login_page.login(test_list_item["username"], test_list_item["password"])
     assert InventoryPage(driver).is_loaded(), "Inventory page did not load for performance_glitch_user"
