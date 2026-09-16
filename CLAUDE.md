@@ -167,6 +167,19 @@ intermittently "succeeding" without producing the expected DOM change
 rather than re-debugging from scratch — see memory
 `project_headless_click_idle_quirk` for the full writeup.
 
+The same `document.hasFocus() == False` quirk also swallows `send_keys()`,
+not just clicks — discovered the same day, in the same CI run, in
+`CheckoutPage.fill_info`: typed values (e.g. "John" into first name)
+sometimes never landed in the DOM at all, with no exception, causing the
+app's own validation to fire on an empty field. Fixed the same way clicks
+are: force focus via JS (`self.driver.execute_script("arguments[0].focus();", element)`)
+immediately before `send_keys()`, then wait for
+`element.get_attribute("value") == value` before moving on, as a safety
+net. If a new page object needs to type into a field right after a
+click/navigation (the same risk window as the click quirk), apply this
+focus-before-`send_keys` pattern preemptively rather than waiting for CI
+to expose it.
+
 `conftest.py`'s `driver` fixture does **not** set a global implicit wait —
 it was removed because it made any "assert element is absent" check pay the
 full timeout. Page objects use an explicit `WebDriverWait` inside the
