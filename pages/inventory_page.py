@@ -87,8 +87,13 @@ class InventoryPage:
         return int(badges[0].text)
 
     def go_to_cart(self):
-        """Clicks the cart icon and opens the cart page."""
+        """Clicks the cart icon and opens the cart page.
+
+        Clicks via JS rather than a native WebDriver click — see
+        CartPage.remove_item for why: a native click after another
+        click/navigation on this site can silently no-op in headless
+        Chrome when document.hasFocus() is False."""
         cart_link = WebDriverWait(self.driver, 5).until(
             EC.element_to_be_clickable(self.CART_LINK)
         )
-        cart_link.click()
+        self.driver.execute_script("arguments[0].click();", cart_link)

@@ -28,8 +28,9 @@ from `python-selenium-practice` (the course exercises repo).
 ## Tech stack & structure
 
 - **Design pattern:** Page Object Model — one class per page in `pages/`
-  (`LoginPage`, `InventoryPage`, `CartPage`, `CheckoutPage`). Tests in `tests/`
-  never call Selenium directly; they call page object methods.
+  (`LoginPage`, `InventoryPage`, `CartPage`, `ProductPage`, `CheckoutPage`).
+  Tests in `tests/` never call Selenium directly; they call page object
+  methods.
 - **Why POM:** a locator only needs to change in one place when the site
   changes, instead of in every test that touches that element.
 - **Data-driven tests:** JSON files under `data/`, parsed as lists of dicts,
@@ -78,20 +79,33 @@ deferred to v2, also noted there.
 `InventoryPage` (sort, product listing, add/remove to cart, cart badge count)
 and `CartPage` are implemented. Inventory sort tests I1-I5 pass (I5 is
 `xfail`-marked, documenting `problem_user`'s broken sort on purpose). Cart
-test C1 (add single item) passes; C2-C4 are still stubs. `CheckoutPage` and
-all of `test_checkout.py` (CO1-CO6) are still stubs with `# TODO` markers
-matching their matrix case IDs.
+tests C1-C4 (add single/multiple items, remove item from both the inventory
+and cart pages, cart persists across navigation) all pass. `ProductPage`
+(product detail page: add/remove to cart, back to products) is implemented,
+used by C4. `CheckoutPage` and all of `test_checkout.py` (CO1-CO6) are still
+stubs with `# TODO` markers matching their matrix case IDs.
 
 `InventoryPage.add_to_cart(product_name)` takes the product's visible name
 and builds its `data-test` selector directly (lowercase, spaces to hyphens)
 — don't reintroduce a multi-candidate "guess the selector" fallback here.
-An earlier version tried several slug variants in sequence, each with its
-own failed 5s `WebDriverWait`; on this site that ~15-20s of accumulated
-delay was enough to trigger a real headless-Chrome quirk where native
-WebDriver clicks silently stop registering after the page has sat idle for
-about 10s (confirmed via `document.hasFocus()` returning `False`; a JS-
-dispatched `element.click()` still worked when the native click didn't).
-Keeping `add_to_cart` fast and direct avoids the idle window entirely.
+
+**Known headless-Chrome click quirk on this site:** a native WebDriver
+`.click()` can silently stop registering (no exception, handler just
+doesn't fire) whenever `document.hasFocus()` is `False` — this happens both
+after ~10s of page idle and right after a same-page click/navigation (e.g.
+clicking "Continue Shopping" right after clicking the cart icon). Any
+page-object method that clicks something right after a prior click in the
+same test is a candidate for this. Fixed by clicking via
+`self.driver.execute_script("arguments[0].click();", element)` instead of
+`element.click()` — already applied to `CartPage.remove_item`,
+`CartPage.continue_shopping`, `CartPage.go_to_checkout`, `CartPage.click_item`,
+`InventoryPage.go_to_cart`, and `ProductPage.back_to_products`.
+`InventoryPage.add_to_cart` is the one exception still on a native click
+since it always fires right after page load, before any other click. If a
+new click-based method starts intermittently "succeeding" without producing
+the expected DOM change, apply the same JS-click fix rather than
+re-debugging from scratch — see memory `project_headless_click_idle_quirk`
+for the full writeup.
 
 `conftest.py`'s `driver` fixture does **not** set a global implicit wait —
 it was removed because it made any "assert element is absent" check pay the

@@ -2,11 +2,20 @@ from pages.login_page import LoginPage
 from pages.inventory_page import InventoryPage
 from pages.cart_page import CartPage
 from pages.checkout_page import CheckoutPage
+from tests.test_data_loader import VALID_USER
 
 
 # CO1 — Complete checkout flow (happy path)
 def test_complete_checkout_flow(driver):
-    pass
+    products = ["Sauce Labs Backpack", "Sauce Labs Bike Light"]
+    login_page = LoginPage(driver)
+    login_page.login(VALID_USER["username"], VALID_USER["password"])
+    inventory_page = InventoryPage(driver)
+    for product in products:
+        inventory_page.add_to_cart(product)
+    inventory_page.go_to_cart()
+    cart_page = CartPage(driver)
+    cart_page.go_to_checkout()
 
 
 # CO2 — Missing first name
