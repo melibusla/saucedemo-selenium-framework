@@ -20,9 +20,8 @@ def pytest_addoption(parser):
 @pytest.fixture()
 def driver(request):
     browser_name = request.config.getoption("browser_name")
-    # Same convention you used in e2ePractice/Jenkins: no graphical session in CI,
-    # so headless + the two Linux-specific flags are required there.
-    headless = os.environ.get("CI") is not None
+    # Force headless for local runs to avoid browser UI prompts
+    headless = True
 
     if browser_name == "chrome":
         options = ChromeOptions()
