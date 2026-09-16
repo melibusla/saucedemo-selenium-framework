@@ -62,9 +62,16 @@ class CheckoutPage:
                 # sidesteps the same focus dependency.
                 self.driver.execute_script("arguments[0].focus();", element)
                 element.send_keys(value)
-                WebDriverWait(self.driver, 5).until(
-                    lambda d, locator=locator, value=value: d.find_element(*locator).get_attribute("value") == value
-                )
+                try:
+                    WebDriverWait(self.driver, 5).until(
+                        lambda d, locator=locator, value=value: d.find_element(*locator).get_attribute("value") == value
+                    )
+                except Exception:
+                    actual = self.driver.find_element(*locator).get_attribute("value")
+                    has_focus = self.driver.execute_script("return document.hasFocus();")
+                    active_id = self.driver.execute_script("return document.activeElement && document.activeElement.id;")
+                    print(f"DEBUG fill_info mismatch: locator={locator} expected={value!r} actual={actual!r} hasFocus={has_focus} activeElementId={active_id!r} url={self.driver.current_url}")
+                    raise
 
         if submit:
             button = WebDriverWait(self.driver, 5).until(
