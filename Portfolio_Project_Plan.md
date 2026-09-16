@@ -94,7 +94,11 @@ Written in English. Must include:
       "logged in with items in cart" / "on checkout step one" setup lives in
       `conftest.py` fixtures (`products_in_cart`, `checkout_step_one`)
       rather than being copy-pasted per test.
-- [ ] Set up GitHub Actions
-- [ ] Write README
-- [ ] Publish repo, link from CV and LinkedIn
+- [x] Set up GitHub Actions — `.github/workflows/tests.yml`, matrixed across
+      `ubuntu-latest`/`windows-latest`, headless Chrome, runs on every push
+      and PR
+- [x] Write README — coverage summary, tech stack, local run instructions,
+      CI badge, design decisions
+- [x] Publish repo — public on GitHub
+- [ ] Link from CV and LinkedIn
 - [ ] Later: migrate/extend with Playwright once that course is underway

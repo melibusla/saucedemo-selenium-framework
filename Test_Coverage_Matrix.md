@@ -1,8 +1,9 @@
 # Test Coverage Matrix — SauceDemo Automation
 
-25 cases across 4 features (8 Login + 5 Inventory + 4 Cart + 8 Checkout).
-Positive and negative paths are balanced deliberately — a portfolio built
-only on happy paths reads as tutorial-following, not test design.
+25 cases across 4 features (8 Login + 5 Inventory + 4 Cart + 8 Checkout),
+plus one bonus checkout case found during implementation (see the Checkout
+table). Positive and negative paths are balanced deliberately — a portfolio
+built only on happy paths reads as tutorial-following, not test design.
 
 ---
 
@@ -50,6 +51,7 @@ only on happy paths reads as tutorial-following, not test design.
 | CO6 | Order total calculation | Positive | High | Sum of item prices + tax matches displayed total — this is the case most likely to catch a real business-logic bug, not just a UI issue |
 | CO7 | Generate PDF order + Back Home | Positive | Medium | On the confirmation page: clicking "Generate PDF order" triggers a real browser file download (verified by polling the download folder and checking the file starts with the `%PDF` magic bytes, not just that the click didn't error), then "Back Home" returns to the product catalog. Chrome-only: downloads are unblocked via the `Page.setDownloadBehavior` DevTools Protocol command, which has no Firefox equivalent |
 | CO8 | PDF order receipt content matches checkout | Positive | High | Reads the downloaded PDF's text (via `pypdf`) and asserts the shipping name, postal code, each line item's name+price, and the item total/tax/total all match what was actually entered and displayed during checkout — not just that a PDF exists (that's CO7). Expected values are read off the checkout overview page rather than hardcoded, so the test still holds if catalog prices change |
+| Bonus | Cancel from checkout overview (step two) | Negative | Medium | Not in the original matrix. Added because the "Cancel" button goes to a *different* page depending on which step it's clicked from — `cart.html` from checkout-step-one (CO5), but `inventory.html` from checkout-step-two/overview. Verifies cart contents survive the trip through inventory.html instead of assuming the same destination as CO5 |
 
 ---
 
