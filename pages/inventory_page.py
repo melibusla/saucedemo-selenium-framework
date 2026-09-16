@@ -61,22 +61,30 @@ class InventoryPage:
         """Clicks the Add to cart button for a product, given its visible
         name (e.g. 'Sauce Labs Backpack'). SauceDemo's data-test attributes
         are always the name lowercased with spaces turned into hyphens
-        (e.g. 'add-to-cart-sauce-labs-backpack')."""
+        (e.g. 'add-to-cart-sauce-labs-backpack').
+
+        Clicks via JS — see CartPage.remove_item's docstring for why
+        (native clicks can silently no-op here when document.hasFocus() is
+        False, e.g. on the slower GitHub Actions runners even though this
+        click fires right after page load)."""
         slug = product_name.strip().lower().replace(" ", "-")
         selector = (By.CSS_SELECTOR, f'[data-test="add-to-cart-{slug}"]')
         button = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(selector)
         )
-        button.click()
+        self.driver.execute_script("arguments[0].click();", button)
 
     def remove_from_cart(self, product_id):
         """Clicks the Remove button for a product already in the cart.
         This pattern is the same as add_to_cart, but the button's
-        data-test value starts with 'remove-'."""
+        data-test value starts with 'remove-'.
+
+        Clicks via JS — see CartPage.remove_item's docstring for why
+        (native clicks can silently no-op here after a prior click/navigation)."""
         button = WebDriverWait(self.driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, f'[data-test="remove-{product_id}"]'))
         )
-        button.click()
+        self.driver.execute_script("arguments[0].click();", button)
 
     def get_cart_count(self):
         """Returns the count shown in the cart badge.

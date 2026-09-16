@@ -149,13 +149,23 @@ same test is a candidate for this. Fixed by clicking via
 `self.driver.execute_script("arguments[0].click();", element)` instead of
 `element.click()` — already applied to `CartPage.remove_item`,
 `CartPage.continue_shopping`, `CartPage.go_to_checkout`, `CartPage.click_item`,
-`InventoryPage.go_to_cart`, and `ProductPage.back_to_products`.
-`InventoryPage.add_to_cart` is the one exception still on a native click
-since it always fires right after page load, before any other click. If a
-new click-based method starts intermittently "succeeding" without producing
-the expected DOM change, apply the same JS-click fix rather than
-re-debugging from scratch — see memory `project_headless_click_idle_quirk`
-for the full writeup.
+`InventoryPage.go_to_cart`, `InventoryPage.add_to_cart`,
+`InventoryPage.remove_from_cart`, `ProductPage.back_to_products`,
+`CheckoutPage.fill_info`'s Continue click, and `CheckoutPage.finish`. All
+page-object clicks are now JS clicks except `LoginPage`'s (login button,
+error-close button), which fire on a freshly loaded page before any other
+click and haven't shown the issue. `InventoryPage.add_to_cart` used to be
+believed safe for the same "fires right after page load" reason, but the
+2026-09-16 CI run (GitHub Actions, both ubuntu-latest and windows-latest)
+showed it flaking there even though it never has locally — GitHub-hosted
+runners are slow/idle enough to trip `document.hasFocus() == False` even on
+that first click. Lesson: **"fires right after page load" is not immunity
+on CI** — only trust a native click if it has actually run clean in CI
+repeatedly, not just locally. If a new click-based method starts
+intermittently "succeeding" without producing the expected DOM change
+(locally or, more likely now, only in CI), apply the same JS-click fix
+rather than re-debugging from scratch — see memory
+`project_headless_click_idle_quirk` for the full writeup.
 
 `conftest.py`'s `driver` fixture does **not** set a global implicit wait —
 it was removed because it made any "assert element is absent" check pay the

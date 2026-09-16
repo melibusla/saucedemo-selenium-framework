@@ -35,7 +35,12 @@ class CheckoutPage:
         page on checkout-step-one. This matters for cancel(): the Cancel
         button behaves differently depending on step — step one returns to
         the cart, step two (after Continue) returns to the inventory page
-        instead. See test_cancel_mid_checkout."""
+        instead. See test_cancel_mid_checkout.
+
+        The Continue click is dispatched via JS — see CartPage.remove_item's
+        docstring for why (native clicks can silently no-op here when
+        document.hasFocus() is False, which this hit on GitHub Actions
+        runners after filling three fields even though it didn't locally)."""
         fields = [
             (self.FIRST_NAME_INPUT, first_name),
             (self.LAST_NAME_INPUT, last_name),
@@ -51,9 +56,10 @@ class CheckoutPage:
                 element.send_keys(value)
 
         if submit:
-            WebDriverWait(self.driver, 5).until(
+            button = WebDriverWait(self.driver, 5).until(
                 EC.element_to_be_clickable(self.CONTINUE_BUTTON)
-            ).click()
+            )
+            self.driver.execute_script("arguments[0].click();", button)
 
     def get_error_message(self):
         """Returns the validation error text shown when a required field is blank."""
@@ -103,10 +109,15 @@ class CheckoutPage:
         )
 
     def finish(self):
-        """Clicks the Finish button on the overview page."""
-        WebDriverWait(self.driver, 5).until(
+        """Clicks the Finish button on the overview page.
+
+        Clicks via JS — see CartPage.remove_item's docstring for why (native
+        clicks can silently no-op here right after a prior click, and this
+        one fires immediately after fill_info's Continue click)."""
+        button = WebDriverWait(self.driver, 5).until(
             EC.element_to_be_clickable(self.FINISH_BUTTON)
-        ).click()
+        )
+        self.driver.execute_script("arguments[0].click();", button)
 
     def is_order_complete(self):
         """Returns True when the confirmation page is visible."""
