@@ -50,6 +50,14 @@ pytest --browser_name chrome --html=reports/report.html
 Every push and pull request runs the full suite headless on GitHub Actions
 across `ubuntu-latest` and `windows-latest` (`.github/workflows/tests.yml`).
 
+## Additional exercises
+
+`robot_tests/` — Robot Framework (SeleniumLibrary) practice against the same
+SauceDemo flows covered above. Self-taught exploration to demonstrate
+familiarity with keyword-driven syntax, not the framework used for the
+coverage described in this README, and not run in any production context.
+See `robot_tests/README.md` for scope and how to run it.
+
 ## Design decisions
 
 **Why Page Object Model.** Each page (`LoginPage`, `InventoryPage`,
